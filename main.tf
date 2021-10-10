@@ -19,6 +19,7 @@ module "vpc" {
   }
 }
 
+# WEBAPP
 resource "aws_instance" "webapp" {
   ami = "ami-02e136e904f3da870"
   instance_type = "t2.micro"
@@ -63,4 +64,50 @@ resource "aws_security_group_rule" "web-http" {
   protocol          = "tcp"
   cidr_blocks       = ["45.19.53.76/32"]
   security_group_id = aws_security_group.web-sg.id
+}
+
+# JENKINS
+resource "aws_instance" "jenkins" {
+  ami = "ami-02e136e904f3da870"
+  instance_type = "t2.micro"
+  subnet_id = module.vpc.public_subnets[0]
+  key_name = "dev"
+  vpc_security_group_ids = [aws_security_group.jenkins-sg.id]
+
+  tags = {
+    Name = "jenkins-app"
+  }
+
+}
+resource "aws_security_group" "jenkins-sg" {
+  name = "jenkins-sg"
+  description = "allow traffic to jenkins server"
+  vpc_id = module.vpc.vpc_id
+}
+
+resource "aws_security_group_rule" "jenkins-egress" {
+  type              = "egress"
+  from_port         = 0
+  to_port           = 0
+  protocol          = "-1"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.jenkins-sg.id
+}
+
+resource "aws_security_group_rule" "jenkins-ssh" {
+  type              = "ingress"
+  from_port         = 22
+  to_port           = 22
+  protocol          = "tcp"
+  cidr_blocks       = ["45.19.53.76/32"]
+  security_group_id = aws_security_group.jenkins-sg.id
+}
+
+resource "aws_security_group_rule" "jenkins-8080" {
+  type              = "ingress"
+  from_port         = 8080
+  to_port           = 8080
+  protocol          = "tcp"
+  cidr_blocks       = ["45.19.53.76/32"]
+  security_group_id = aws_security_group.jenkins-sg.id
 }
